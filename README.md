@@ -1,1 +1,1 @@
-# This project is a fork of [Shopyo](https://github.com/Abdur-rahmaanJ/shopyo). It more for experimenting new features
+# This project is a fork of [Shopyo](https://github.com/Abdur-rahmaanJ/shopyo). It is more for experimenting new features
