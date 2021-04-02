@@ -20,15 +20,25 @@ chardet==4.0.0
     # via requests
 click==7.1.2
     # via pip-tools
+codecov==2.1.11
+    # via -r requirements/dev.in
 colorama==0.4.4
     # via
     #   pytest
     #   sphinx
     #   tox
+coverage==5.5
+    # via
+    #   codecov
+    #   pytest-cov
 distlib==0.3.1
     # via virtualenv
 docutils==0.16
     # via sphinx
+factory-boy==3.2.0
+    # via -r requirements\tests.in
+faker==7.0.1
+    # via factory-boy
 filelock==3.0.12
     # via
     #   tox
@@ -66,18 +76,30 @@ pygments==2.8.1
     # via sphinx
 pyparsing==2.4.7
     # via packaging
+pytest-cov==2.11.1
+    # via -r requirements\tests.in
+pytest-dotenv==0.5.2
+    # via -r requirements\tests.in
 pytest-order==0.10.0
     # via -r requirements\tests.in
 pytest==6.2.2
     # via
     #   -r requirements\tests.in
+    #   pytest-cov
+    #   pytest-dotenv
     #   pytest-order
 python-dateutil==2.8.1
-    # via freezegun
+    # via
+    #   faker
+    #   freezegun
+python-dotenv==0.17.0
+    # via pytest-dotenv
 pytz==2021.1
     # via babel
 requests==2.25.1
-    # via sphinx
+    # via
+    #   codecov
+    #   sphinx
 six==1.15.0
     # via
     #   python-dateutil
@@ -99,13 +121,19 @@ sphinxcontrib-qthelp==1.0.3
     # via sphinx
 sphinxcontrib-serializinghtml==1.1.4
     # via sphinx
+text-unidecode==1.3
+    # via faker
 toml==0.10.2
     # via
     #   pep517
     #   pytest
     #   tox
-tox==3.23.0
+tox-gh-actions==2.4.0
     # via -r requirements/dev.in
+tox==3.23.0
+    # via
+    #   -r requirements/dev.in
+    #   tox-gh-actions
 urllib3==1.26.4
     # via requests
 virtualenv==20.4.3

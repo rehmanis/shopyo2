@@ -2,3 +2,5 @@
 -r tests.in
 pip-tools
 tox
+tox-gh-actions
+codecov
