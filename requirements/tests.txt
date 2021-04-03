@@ -10,6 +10,8 @@ attrs==20.3.0
     # via pytest
 colorama==0.4.4
     # via pytest
+coverage==5.5
+    # via pytest-cov
 factory-boy==3.2.0
     # via -r requirements/tests.in
 faker==7.0.1
@@ -26,6 +28,8 @@ py==1.10.0
     # via pytest
 pyparsing==2.4.7
     # via packaging
+pytest-cov==2.11.1
+    # via -r requirements/tests.in
 pytest-dotenv==0.5.2
     # via -r requirements/tests.in
 pytest-order==0.10.0
@@ -33,6 +37,7 @@ pytest-order==0.10.0
 pytest==6.2.2
     # via
     #   -r requirements/tests.in
+    #   pytest-cov
     #   pytest-dotenv
     #   pytest-order
 python-dateutil==2.8.1

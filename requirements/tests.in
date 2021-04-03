@@ -3,3 +3,4 @@ pytest-order
 freezegun
 factory-boy
 pytest-dotenv
+pytest-cov
