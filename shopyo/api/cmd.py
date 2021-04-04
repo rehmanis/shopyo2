@@ -21,6 +21,7 @@ from shopyo.api.file import get_folders
 from shopyo.api.file import trycopytree
 
 
+
 def clean(app):
     """
     Deletes shopyo.db and migrations/ if present in current working directory.
