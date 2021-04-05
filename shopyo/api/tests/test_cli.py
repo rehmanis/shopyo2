@@ -1,7 +1,7 @@
 import os
 import pytest
 from click.testing import CliRunner
-from shopyo.api.scripts import cli
+from shopyo.api.cli import cli
 from shopyo.api.constants import SEP_CHAR, SEP_NUM
 
 
@@ -24,7 +24,7 @@ class TestCliCreateBox:
         tmpdir.mkdir("modules").mkdir("box__foo")
         os.chdir(tmpdir)
         module_path = os.path.join("modules", "box__foo")
-        result = cli_runner("startbox2", "box__foo")
+        result = cli_runner("startbox", "box__foo")
         expected = f"[ ] unable to create. Box {module_path} already exists!"
 
         assert result.exit_code != 0
@@ -34,7 +34,7 @@ class TestCliCreateBox:
     def test_create_unique_box(self, tmpdir, cli_runner, opt):
         tmpdir.mkdir("modules")
         os.chdir(tmpdir)
-        result = cli_runner("startbox2", "box__foo", opt)
+        result = cli_runner("startbox", "box__foo", opt)
         module_path = os.path.join("modules", "box__foo")
         expected = f"[x] Successfully created dir {module_path}"
 
@@ -62,7 +62,7 @@ class TestCliClean:
         fd.write("content")
         os.chdir(tmpdir)
         runner = flask_app.test_cli_runner(mix_stderr=False)
-        result = runner.invoke(cli, ["clean2", "-v"])
+        result = runner.invoke(cli, ["clean", "-v"])
         expected_out = (
             "[x] all tables dropped\n"
             "[x] __pycache__ successfully deleted\n"
@@ -99,7 +99,7 @@ class TestCliClean:
         pyc.write("content")
         os.chdir(tmpdir)
         runner = flask_app.test_cli_runner()
-        result = runner.invoke(cli, ["clean2", "-v"])
+        result = runner.invoke(cli, ["clean", "-v"])
         expected_out = (
             "[x] all tables dropped\n"
             "[x] __pycache__ successfully deleted\n"
@@ -143,7 +143,7 @@ class TestCliClean:
         pyc3.write("content")
         os.chdir(tmpdir)
         runner = flask_app.test_cli_runner()
-        result = runner.invoke(cli, ["clean2", "-v"])
+        result = runner.invoke(cli, ["clean", "-v"])
         expected_out = (
             "[x] all tables dropped\n" "[x] __pycache__ successfully deleted\n"
         )
@@ -189,7 +189,7 @@ class TestCliClean:
         shopyo_db.write("content")
         os.chdir(tmpdir)
         runner = flask_app.test_cli_runner()
-        result = runner.invoke(cli, ["clean2", "-v"])
+        result = runner.invoke(cli, ["clean", "-v"])
         expected_out = (
             "[x] all tables dropped\n"
             "[ ] __pycache__ doesn't exist\n"
@@ -218,7 +218,7 @@ class TestCliClean:
         alembic.write("content-alembic")
         os.chdir(tmpdir)
         runner = flask_app.test_cli_runner(mix_stderr=False)
-        result = runner.invoke(cli, ["clean2", "-v"])
+        result = runner.invoke(cli, ["clean", "-v"])
         expected_out = (
             "[x] all tables dropped\n"
             f"[x] folder '{os.path.join(tmpdir, 'migrations')}' "
@@ -269,7 +269,7 @@ class TestCliClean:
         shopyo_db.write("content")
         os.chdir(shopyo_path)
         runner = flask_app.test_cli_runner()
-        result = runner.invoke(cli, ["clean2", option])
+        result = runner.invoke(cli, ["clean", option])
         expected_out = (
             "[x] all tables dropped\n"
             "[x] __pycache__ successfully deleted\n"
@@ -305,7 +305,7 @@ class TestCliClean:
     def test_clean_on_no_files_to_clean(self, tmpdir, flask_app, option):
         os.chdir(tmpdir)
         runner = flask_app.test_cli_runner(mix_stderr=False)
-        result = runner.invoke(cli, ["clean2", option])
+        result = runner.invoke(cli, ["clean", option])
         expected_out = "[x] all tables dropped\n"
         expected_err_pycache = "[ ] __pycache__ doesn't exist\n"
         expected_err_shopyo_db = (
@@ -327,7 +327,7 @@ class TestCliClean:
         """
         os.chdir(tmpdir)
         runner = flask_app.test_cli_runner(mix_stderr=False)
-        result = runner.invoke(cli, ["clean2"])
+        result = runner.invoke(cli, ["clean"])
         expect_out = "Cleaning...\n" + SEP_CHAR * SEP_NUM + "\n\n"
 
         assert result.exit_code == 0
@@ -344,7 +344,7 @@ class TestCliClean:
         migrations_path = tmpdir.mkdir("migrations")
         os.chdir(tmpdir)
         runner = flask_app.test_cli_runner(mix_stderr=False)
-        result = runner.invoke(cli, ["clean2"])
+        result = runner.invoke(cli, ["clean"])
         expect_out = "Cleaning...\n" + SEP_CHAR * SEP_NUM + "\n\n"
 
         assert result.exit_code == 0
@@ -358,13 +358,101 @@ class TestCliClean:
 
 class TestCliNew:
 
-    def test_new_project_valid_name(self, cli_runner, tmpdir):
-        os.chdir(tmpdir)
-        result = cli_runner("new2", "bar")
+    @pytest.mark.parametrize("proj,parent", [("", "foo"), ("bar", "")])
+    def test_new_projname_already_exists(
+        self, cli_runner, proj, parent, tmp_path
+    ):
+        name = proj or parent
+        parent_path = tmp_path / parent
+        proj_path = parent_path / name
+        proj_path.mkdir(parents=True)
+        os.chdir(parent_path)
+        result = cli_runner("new", proj)
+        expected_out = (
+            f"[ ] Error: Unable to create new project. Path {proj_path}"
+            " exits"
+        )
 
-        print(os.getcwd())
-        print(result.output)
+        assert result.exit_code == 1
+        assert expected_out in result.output
+
+    def test_new_project_invvalid_projname(self, cli_runner):
+        result = cli_runner("new", ")foo?")
+        expected_out = (
+            "[ ] Error: PROJNAME is not valid, please use alphanumeric "
+            "and underscore only"
+        )
+
+        assert result.exit_code == 1
+        assert expected_out in result.output
+
+    @pytest.mark.parametrize("proj,parent", [("", "foo"), ("bar", "")])
+    def test_new_project_valid_name(self, cli_runner, tmp_path, proj, parent):
+
+        # create the parent folder for foo and none for bar proj
+        temp_proj = tmp_path / parent
+        temp_proj.mkdir(exist_ok=True)
+        # change to the parent folder (in case of bar it tmp_path while for foo
+        # it is tmp_path/foo) and run the new command. For foo, there is no
+        # argument for proj provided so it will create a foo/ project inside
+        # tmp_path/foo while for bar it will create bar/bar/ inside tmp_path
+        os.chdir(temp_proj)
+        result = cli_runner("new", proj)
+        # change back to tmp_path so that for easier comparision
+        os.chdir(tmp_path)
+        # use this for the name of the project that was created in tmp_path
+        name = parent or proj
+
         assert result.exit_code == 0
+        assert os.path.exists(os.path.join(name, name))
+        assert os.path.exists(os.path.join(name, "requirements.txt"))
+        assert os.path.exists(os.path.join(name, "dev_requirements.txt"))
+        assert os.path.exists(os.path.join(name, "tox.ini"))
+        assert os.path.exists(os.path.join(name, "MANIFEST.in"))
+        assert os.path.exists(os.path.join(name, "README.md"))
+        assert os.path.exists(os.path.join(name, ".gitignore"))
+        assert os.path.exists(os.path.join(name, "pytest.ini"))
+        assert os.path.exists(os.path.join(name, "docs"))
+        assert os.path.exists(os.path.join(name, "setup.py"))
+        assert os.path.exists(os.path.join(name, name, "__init__.py"))
+        assert os.path.exists(os.path.join(name, name, "cli.py"))
+        assert os.path.exists(os.path.join(name, name, "sphinx_source"))
+        assert os.path.exists(
+            os.path.join(name, name, "sphinx_source", "conf.py")
+        )
+        assert os.path.exists(
+            os.path.join(name, name, "sphinx_source", "_static")
+        )
+        assert os.path.exists(
+            os.path.join(
+                name, name, "sphinx_source", "_static", "custom.css"
+            )
+        )
+        assert os.path.exists(
+            os.path.join(name, name, "sphinx_source", "Makefile")
+        )
+        assert os.path.exists(
+            os.path.join(name, name, "sphinx_source", "index.rst")
+        )
+        assert os.path.exists(
+            os.path.join(name, name, "sphinx_source", "docs.rst")
+        )
+        assert os.path.exists(
+            os.path.join(name, name, "sphinx_source", "shopyo.ico")
+        )
+        assert not os.path.exists(os.path.join(name, name, "__main__.py"))
+        assert not os.path.exists(os.path.join(name, name, "api"))
+        assert not os.path.exists(os.path.join(name, name, ".tox"))
+        assert not os.path.exists(os.path.join(name, name, ".coverage"))
+        assert not os.path.exists(os.path.join(name, name, "shopyo.db"))
+        assert not os.path.exists(os.path.join(name, name, "testing.db"))
+        assert not os.path.exists(os.path.join(name, name, "coverage.xml"))
+        assert not os.path.exists(os.path.join(name, name, "setup.cfg"))
+        assert not os.path.exists(os.path.join(name, name, "instance"))
+        assert not os.path.exists(os.path.join(name, name, "migrations"))
+        assert not os.path.exists(os.path.join(name, name, "__pycache__"))
+        assert not os.path.exists(os.path.join(name, name, "pyproject.toml"))
+        assert not os.path.exists(os.path.join(name, name, "config.json"))
 
 
 class TestCliInitialise:
@@ -493,7 +581,7 @@ class TestCliCreateModule:
 class TestCliCollectstatic:
 
     def test_collectstatic_with_default_src(self, cli_runner):
-        result = cli_runner("collectstatic2")
+        result = cli_runner("collectstatic")
         expected_out = "Collecting static...\n" + SEP_CHAR * SEP_NUM + "\n\n"
 
         assert result.exit_code == 0
@@ -516,7 +604,7 @@ class TestCliCollectstatic:
         ]
     )
     def test_collectstatic_with_valid_arg(self, src, expected, cli_runner):
-        result = cli_runner("collectstatic2", src)
+        result = cli_runner("collectstatic", src)
         expected_out = "Collecting static...\n" + SEP_CHAR * SEP_NUM + "\n\n"
 
         assert result.exit_code == 0
@@ -526,7 +614,7 @@ class TestCliCollectstatic:
 
     def test_collectstatic_with_invalid_arg(self, cli_runner):
 
-        result = cli_runner("collectstatic2", "foobar")
+        result = cli_runner("collectstatic", "foobar")
         modules_path = os.path.join("modules", "foobar")
         modules_path = os.path.join(os.getcwd(), modules_path)
         expected_out = f"[ ] path: {modules_path} does not exist"
@@ -538,7 +626,7 @@ class TestCliCollectstatic:
     @pytest.mark.parametrize("option", ["-v", "--verbose"])
     def test_collectstatic_with_verbose(self, cli_runner, option):
 
-        result = cli_runner("collectstatic2", option)
+        result = cli_runner("collectstatic", option)
         expected_out1 = "Collecting static...\n" + SEP_CHAR * SEP_NUM + "\n"
         expected_out2 = "[x] done copying"
 

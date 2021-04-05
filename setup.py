@@ -85,7 +85,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "shopyo=shopyo.api.scripts:cli"
+            "shopyo=shopyo.api.cli:cli"
         ]
     },
 )
