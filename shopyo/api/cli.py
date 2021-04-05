@@ -15,6 +15,7 @@ from shopyo.api.database import autoload_models
 from shopyo.api.constants import SEP_CHAR, SEP_NUM
 from shopyo.api.validators import get_module_path_if_exists
 from shopyo.api.validators import is_alpha_num_underscore
+from shopyo.api.info import printinfo
 
 
 def _create_shopyo_app(info):
@@ -37,7 +38,11 @@ def _create_shopyo_app(info):
 @pass_script_info
 def cli(info, **parmams):
     """CLI for shopyo"""
-    info.data['config'] = parmams["config"]
+    printinfo()
+    config_name = parmams["config"]
+    info.data['config'] = config_name
+    # os.environ["FLASK_APP"] = f"app:create_app('{config_name}')"
+    # os.environ["FLASK_ENV"] = config_name
 
 
 @cli.command("startbox", with_appcontext=False)
@@ -195,7 +200,7 @@ def initialise(verbose):
     _clean(verbose=verbose)
 
     # load all models available inside modules
-    autoload_models()
+    autoload_models(verbose=verbose)
 
     # add a migrations folder to your application.
     click.echo("Creating db...")
