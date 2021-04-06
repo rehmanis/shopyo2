@@ -9,6 +9,10 @@ parallel = true
 source =
     shopyo
     .
+omit =
+    # omit anything in a .local directory anywhere
+    */.tox/*
+    */instance/*
 
 [report]
 show_missing = true
